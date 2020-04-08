@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        #cont{width:1200px;overflow: hidden;margin: 10px auto;}
+        #cont .box{width:250px;float: left;border: solid 1px black;box-sizing: border-box;text-align: center;margin:10px;}
+        .box img{width:200px;}
+        .box p{margin: 6px 0;line-height: 20px;height:40px;overflow: hidden;}
+        .box span{display: block;margin: 6px 0;}
+    </style>
+</head>
+<body>
+    <h2>这里是购物界面，<a href="car1.html">去结算</a></h2>
+    <div id="cont"></div>
+</body>
+<script src="../ajax/ajax.js"></script>
+<script src="../cookie.js"></script>
+<script>
+    class List{
+        constructor(){
+            this.cont = document.querySelector("#cont");
+            this.url ="http://localhost/1912-server/shopping/goods.json";
+            this.load(); 
+            this.addEvent();
+        }
+
+        //1--------------------事件委托；给页面上暂时不存在的元素做绑定事件
+        addEvent(){       
+           var that = this ;
+            this.cont.addEventListener("click",function(eve){
+                if(eve.target.id==="btn"){
+                    // alert(11);
+                  that.id = eve.target.parentNode.getAttribute("index");  //根据ID判断点击的是哪一个商品，加入购物车；
+                  that.setCookie();                          //存cookie时只存商品的ID 和格式 ，防止全部都存，cook很快会被存满
+                }
+            })
+        }
+        //2---------------------------------------------请求数据；
+
+        load(){
+           var that=this;    //ajax里面的回调函数，this指向是window；
+           ajaxGet(this.url,function(res){
+            that.res = JSON.parse(res);
+            that.display()  //渲染页面
+           })
+       }
+        
+        //3--------------------------------------------渲染页面；
+
+        display(){
+           var str = "";
+           for(var i=0;i<this.res.length;i++){
+               str +=`<div class="box" index="${this.res[i].goodsId}">
+                       <img src="${this.res[i].img}"/>
+                       <p>${this.res[i].name}</p>
+                       <span>${this.res[i].price}</span>
+                       <input type="button" value="加入购物车" id="btn"/>
+                      </div>`
+           }
+           this.cont.innerHTML = str ;
+        }
+
+        //4----------------------------------------------存cookie；
+        
+        setCookie(){
+             console.log(this.id);
+
+        //4-1------------------------------------------存cookie之前确定一下，有没有老cookie，判断一下（是不是第一次存）；
+
+            this.goods = getCookie("goodsMsg") ? JSON.parse(getCookie("goodsMsg")) : [];//存之前先判断有没有老cookie;
+             
+            var onoff=0;      //0：表示没有找到一样的，1：表示找到一样的了；
+
+            for(var i=0;i<this.goods.length;i++){
+                if(this.goods[i].id === this.id){           //读取的cookie的ID和我当前点击的ID重复了
+                    this.goods[i].num++;                    //不用再存了，把对应的num加加
+                    onoff = 1 ;    
+                }
+            }
+            if(onoff==0){
+             this.goods.push({
+                    id:this.id,
+                    num:1
+              })
+            }
+            setCookie("goodsMsg",JSON.stringify(this.goods));
+        }
+    }
+    new List();
+</script>
+</html>

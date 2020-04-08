@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        img{width:100px;}
+    </style>
+</head>
+<body>
+    <h2>这是购物车页面，<a href="list.html">继续购物</a></h2>
+    <table border="1" width="900" align="center">
+        <thead>
+            <tr>
+                <th>图片</th>
+                <th>名字</th>
+                <th>价格</th>
+                <th>数量</th>
+                <th>删除</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- <tr>
+                <td><img src="" alt=""></td>
+                <td>DATA</td>
+                <td>DATA</td>
+                <td><input type="number"></td>
+                <td>DATA</td>
+            </tr> -->
+        </tbody> 
+         <tfoot>
+            <tr>
+                <td><input type="text" value="总计"/></td>
+                <td><img src=""/></td>
+                <td></td>
+                <td></td>
+                <td><input type="text" value="总价"/></td>
+                <td><input type="button" value="删除"/></td>
+             </tr>
+        </tfoot>
+    </table>
+</body>
+<script src="../ajax.js"></script>
+<script src="../cookie.js"></script>
+<script>
+    class Car{
+        constructor(){
+            this.tbody = document.querySelector("tbody");
+            this.url = "http://localhost/1912-server/shopping/goods.json";
+
+            this.load();
+            this.addEvent();
+        }
+        addEvent(){
+            var that = this;
+            // D1.利用事件委托绑定删除按钮的事件
+            this.tbody.onclick = function(eve){
+                if(eve.target.id === "delete"){
+                    // D2.点击删除按钮时获取当前数据的id
+                    that.id = eve.target.parentNode.parentNode.getAttribute("index");
+                    // D3.删除DOM元素
+                    eve.target.parentNode.parentNode.remove();
+                    // D4.准备删除cookie中对应的商品信息
+                    that.changeCookie(function(index){
+                        that.goods.splice(index,1);
+                    });
+                }
+            }
+            // N1.利用事件委托绑定修改数量的事件
+            this.tbody.oninput = function(eve){
+                if(eve.target.id === "num"){
+                    // N2.修改数量时获取当前数据的id和改之后的值
+                    that.id = eve.target.parentNode.parentNode.getAttribute("index");
+                    
+                    // N3.修改cookie中的数据
+                    that.changeCookie(function(index){
+                        that.goods[index].num = eve.target.value;
+                    });
+                }
+            }
+        }
+        changeCookie(cb){
+            // 拿到所有cookie,遍历
+            for(var i=0;i<this.goods.length;i++){
+                // 作比对
+                if(this.goods[i].id == this.id){
+                    cb(i);
+                    break;
+                }
+            }
+            // 最后.将删除或修改了对应数据的数组，存回cookie
+            setCookie("goodsMsg",JSON.stringify(this.goods))
+        }
+        load(){
+            var that = this;
+            ajaxGet(this.url,function(res){
+                that.res = JSON.parse(res);
+                that.getCookie()
+            })
+        }
+        getCookie(){
+            this.goods = getCookie("goodsMsg") ? JSON.parse(getCookie("goodsMsg")) : [];
+
+            this.display();
+        }
+        display(){
+            var str = ""
+            for(var i=0;i<this.res.length;i++){
+                for(var j=0;j<this.goods.length;j++){
+                    if(this.res[i].goodsId === this.goods[j].id){
+                        str += `<tr index="${this.res[i].goodsId}">
+                                    <td><img src="${this.res[i].img}" alt=""></td>
+                                    <td>${this.res[i].name}</td>
+                                    <td>${this.res[i].price}</td>
+                                    <td><input type="number" value="${this.goods[j].num}" id="num" min="1"></td>
+                                    <td><input type="button" value="删除" id="delete"></td>
+                                </tr>`;
+                    }
+                }
+            }
+            this.tbody.innerHTML = str;
+        }
+    }
+
+    new Car();
+
+    // 1.将当前购物车功能继续完善
+        // 1.在每个商品前面增加复选框
+        // 2.最后增加全选框
+        // 3.每个商品增加，小计
+        // 4.所有商品增加总价
+        // 5.增加数量的合计
+        // 6.增加全部删除
+
+    // 2.使用localstorage实现购物车
+</script>
+</html>

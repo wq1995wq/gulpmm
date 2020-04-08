@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        img{width: 100px;}
+        tbody #add{width:20px;height: 20px;margin:10px;}
+        tbody #reduce{width:20px;height: 20px;margin:10px;}
+        span{width: 40px;}
+    </style>
+</head>
+<body>
+    <h2>这是购物车页面，<a href="list1.html">继续购物</a></h2>
+    <table border="1" width=100% align="center">
+        <thead>
+            <tr>
+                <th><input type="checkbox" id="quanxuan"/></th>
+                <th>图片</th>
+                <th>名字</th>
+                <th>价格</th>
+                <th>数量</th>
+                <th>小计</th>
+                <th>删除</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- <tr>
+                <td><img src=""/></td>
+                <td>data</td>
+                <td>data</td>
+                <td><input type="number"/></td>
+                <td><input type="button" value="删除" id="delete"/></td>
+            </tr> -->
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>总计</td>
+                <td><img src=""/></td>
+                <td></td>
+                <td></td>
+                <td><span class="sum">已选：</span></td>
+                <td><span class="sumprice">总价：</span></td>
+                <td><input type="button" value="结算" id="jiezhang"/></td>
+             </tr>
+        </tfoot>
+    </table>
+</body>
+<script src="../ajax/ajax.js"></script>
+<script src="../cookie.js"></script>
+<script>
+class Car{
+    constructor(){
+        this.tbody = document.querySelector("tbody");
+        this.url="http://localhost/1912-server/shopping/goods.json";
+        this.quanxuan=document.querySelector("#quanxuan");
+        this.sum=document.querySelector(".sum");
+        this.sumprice=document.querySelector(".sumprice");
+        // this.zonghshu = document.querySelector("tfoot tr td:nth-child(5)");
+        // this.zongjia =document.querySelector("tfoot tr td:nth-child(6)");
+        this.load();
+        this.addEvent();
+    }
+
+//1-------------------------------------------------------------------------绑定事件
+addEvent(){                  
+         var that = this;
+        //1-1--------------------------------------------------------事件委托绑定（删除按钮）；
+
+         this.tbody.onclick = function (eve){
+           if(eve.target.id === "delete"){
+              //点击删除按钮时获取当前数据的ID；
+             that.id = eve.target.parentNode.parentNode.getAttribute("index");
+            //删除DOM元素
+             eve.target.parentNode.parentNode.remove();    //删除DOM元素之后同时删除cookie，防止刷新页面后还有原来的DOM元素；
+             //准备删除cookie中对应的商品信息
+             that.changeCookie(function(index){
+             this.goods.splice(index,1)          //splice 从第i个开始删，删除1个；
+             break;
+             });
+             that.display();
+
+           }
+
+           if(eve.target.id == "add"){
+             that.id = eve.target.parentNode.parentNode.getAttribute("index");
+            //  console.log(eve.target.parentNode.innerText);
+             that.changeCookie(function(index){
+                //  that.goods[index].num = eve.target.value;
+                
+                 that.goods[index].num++;
+             });
+             that.display();
+           }
+
+            if(eve.target.id =="reduce"){
+             that.id = eve.target.parentNode.parentNode.getAttribute("index");
+                 that.changeCookie(function(index){
+                    //  console.log(that.goods[index].num);
+                    //  that.goods[index].num = eve.target.value;
+                    if(that.goods[index].num>=2){
+                        that.goods[index].num--;
+                    }
+                });
+              that.display();
+            }
+        
+
+         if(eve.target.id =="danxuan"){
+             
+             if(eve.target.checked){
+                 eve.target.parentNode.parentNode.setAttribute("class","qwe");
+                 eve.target.value= checked;
+                     
+                 that.check();
+             }else{
+                 target.parentNode.parentNode.removeAttribute("class");
+                 that.quanxuan.checked=false;
+                 that.check();
+             }
+
+             var flag = true; 
+             for(var i=0;i<that.danxuans.length;i++){
+               if(!that.danxuans[i].checked){
+                flag=false;
+                break;  
+               }
+            }
+            that.quanxuan.checked = flag;           
+        }
+  }
+
+     this.quanxuan.onclick=function(){
+         if(this.checked){
+             for(var i=0;i<that.danxuans.length;i++){
+                 that.danxuans[i].checked=true;
+                 that.danxuans[i].parentNode.parentNode.setAttribute("class","qwe");
+             }
+
+             that.check();
+         }else{
+             for(var i=0;i<that.danxuans.length;i++){
+                 that.danxuans[i].checked=false;
+                 that.danxuans[i].parentNode.parentNode.removeAttribute("class");
+             }
+             that.check();
+         }
+
+    }
+
+}
+
+
+check(){
+    this.trs=document.querySelectorAll(".qwe");
+    var sum=0;
+    var sumprice=0;
+    for(var i=0;i<this.trs.length;i++){
+    sum += Number(this.trs[i].children[4].innerText);
+    sumprice += Number(this.trs[i].children[5].innerText);
+    }
+    this.sum.innerText="已选:"+sum;
+    this.sumprice.innerText="总价:"+sumprice;
+}
+
+
+changeCookie(cb){
+      for(var i=0;i<this.goods.length;i++){
+          if(this.goods[i].id == this.id){
+              cb(i)
+          }
+    }
+  setCookie("goodsMsg",JSON.stringify(this.goods));  //存回---新cookie；
+}
+
+
+
+load(){
+       var that = this;
+       ajaxGet(this.url,function(res){
+          that.res = JSON.parse(res);
+          that.getCookie();
+       })
+ }
+
+   //5--------------------------------------------------------获取之前存储的cookie(判断有还是没有)
+
+getCookie(){
+       this.goods = getCookie("goodsMsg") ? JSON.parse(getCookie("goodsMsg")) : [];
+       this.display();
+   }
+
+   //6----------------------------------------------------------渲染页面；
+
+display(){
+       var str = "";
+       for(var i=0;i<this.res.length;i++){                                       //双层循环 比对res中的ID 和 获取的this.goods里面的ID；
+           for(var j=0;j<this.goods.length;j++){
+               if(this.res[i].goodsId===this.goods[j].id){                       //如果相等就找到渲染的数据了
+                 str +=`<tr index="${this.res[i].goodsId}">
+                <td><input type="checkbox" id="danxuan"/></td>
+                <td><img src="${this.res[i].img}"/></td>
+                <td>${this.res[i].name}</td>
+                <td>${this.res[i].price}</td>
+                <td><input type="button" value="-" id="reduce"/><span>${this.goods[j].num}</span><input type="button" value="+" id="add"/></td>
+                <td>${(this.goods[j].num)*(this.res[i].price)}</td>
+                <td><input type="button" value="删除" id="delete"/></td>
+            </tr>`;
+               }
+           }
+       }
+       this.tbody.innerHTML = str;
+       this.danxuans=document.querySelectorAll("#danxuan");
+   }
+}
+
+ new Car();
+</script>
+</html>
